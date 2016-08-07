@@ -13,6 +13,7 @@
 #include <sys/sysctl.h>
 #import "NSBundle+CTFeedback.h"
 #import <MessageUI/MessageUI.h>
+#import <DZLogger.h>
 
 typedef NS_ENUM(NSInteger, CTFeedbackSection){
     CTFeedbackSectionEmail = 0,
@@ -415,6 +416,20 @@ static NSString * const ATTACHMENT_FILENAME = @"screenshot.jpg";
         [controller setBccRecipients:self.bccRecipients];
         [controller setSubject:self._mailSubject];
         [controller setMessageBody:self.mailBody isHTML:self.useHTML];
+        NSArray* logfiles = [[DZGlobalFileLogger logFileManager] sortedLogFilePaths];
+        void(^AddAttachments)(NSInteger index) = ^(NSInteger index) {
+            if (logfiles.count > index) {
+                NSString* filepath = logfiles[index];
+                NSData* data = [NSData dataWithContentsOfFile:filepath];
+                if (data) {
+                    [controller addAttachmentData:data mimeType:@"text" fileName:[filepath lastPathComponent]];
+                }
+            }
+        };
+        AddAttachments(0);
+        AddAttachments(1);
+        AddAttachments(2);
+        
         // Attach an image to the email
         if (self.mailAttachment && [self.mailAttachment length]>0) {
             [controller addAttachmentData:self.mailAttachment mimeType:MIME_TYPE_JPEG fileName:ATTACHMENT_FILENAME];
